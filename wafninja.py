@@ -15,18 +15,27 @@ from db.setDB import testConnection, setDatabase
 from ninja.bypass import firePayload
 from ninja.fuzzer import fireFuzz
 
-def setHeaders(cookie):
+
+def setHeaders(cookie, headers):
     """
         :Description: This function sets the cookie for the requests. 
 
         :param cookie:  A Cookie String
         :type cookie: String
         :todo: Add also other header
-		
+
     """
     if cookie is not None:
-        header.append(['Cookie',cookie])
-        
+        header.append(['Cookie', cookie])
+
+    if headers is not None:
+        headers = headers.split(",")
+
+        for head in headers:
+            h = head.split(":", 1)
+            header.append([h[0], h[1]])
+
+
 def extractParams(input):
     """
         :Description: Takes the '-p' input and splits it into individual parameter
@@ -36,41 +45,44 @@ def extractParams(input):
 
         :return: Dictionary with the parameter as elements
         :note: This function is required to prepare the parameter for the firePayload() or fireFuzz() function
-		
+
     """
     if input is None:
         return None
     input = input.split('&')
     params = {}
     for item in input:
-        params[item.split('=',1)[0]] = item.split('=',1)[1]
+        params[item.split('=', 1)[0]] = item.split('=', 1)[1]
     return params
+
 
 arguments = getArguments()
 
 if arguments[0] == 'bypass':
-    arguments.pop(0) # delete the string that indicates what function to use
-    url, post, cookie, type, delay, waf, outputFile, proxy, prefix, postfix = arguments
-    payload = getPayload(type, waf) # get strings from db
+    arguments.pop(0)  # delete the string that indicates what function to use
+    url, post, cookie, type, delay, waf, outputFile, headers, proxy, prefix, postfix = arguments
+    payload = getPayload(type, waf)  # get strings from db
     header = []
-    setHeaders(cookie)
+    setHeaders(cookie, headers)
     post = extractParams(post)
-    firePayload(type, payload, url, post, header, delay, outputFile, proxy, prefix, postfix)
-        
+    firePayload(type, payload, url, post, header, delay,
+                outputFile, proxy, prefix, postfix)
+
 elif arguments[0] == 'fuzz':
-    arguments.pop(0) # delete the string that indicates what function to use
-    url, post, cookie, type, delay, outputFile, proxy, prefix, postfix = arguments
-    fuzz = getFuzz(type) # get strings from db
+    arguments.pop(0)  # delete the string that indicates what function to use
+    url, post, cookie, type, delay, outputFile, headers, proxy, prefix, postfix = arguments
+    fuzz = getFuzz(type)  # get strings from db
     header = []
-    setHeaders(cookie)
+    setHeaders(cookie, headers)
     post = extractParams(post)
-    fireFuzz(type, fuzz, url, post, header, delay, outputFile, proxy, prefix, postfix)
-        
+    fireFuzz(type, fuzz, url, post, header, delay,
+             outputFile, proxy, prefix, postfix)
+
 elif arguments[0] == 'insert-bypass':
     arguments.pop(0)
     input, type, waf = arguments
     setPayload(input, type, waf)
-    
+
 elif arguments[0] == 'insert-fuzz':
     arguments.pop(0)
     input, expected, type = arguments
